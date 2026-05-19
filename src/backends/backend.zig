@@ -116,9 +116,9 @@ pub const Backend = union(BackendType) {
         };
     }
 
-    pub fn frameCpuCycles(self: *const Self) u32 {
+    pub fn frameCpuCycles(self: *const Self) f64 {
         return switch (self.*) {
-            .nes => 29780,
+            .nes => 1_789_773.0 / 60.0988,
         };
     }
 };
