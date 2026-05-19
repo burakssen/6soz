@@ -1,0 +1,17 @@
+.{
+    .name = ._6soz,
+    .version = "0.0.1",
+    .dependencies = .{
+        .nes = .{
+            .url = "git+https://github.com/burakssen/6soz-nes#ad5341b878178f532e7546975a6850536a6b8af5",
+            .hash = "_6soz_nes-0.0.1-2l771HyzAAA6Kd8R-OTfh7rzuSkhmHquS3qpnqgtU6I9",
+        },
+        .raylib = .{
+            .url = "git+https://github.com/raysan5/raylib#c04e57399acfc860a68ac0c11ff6d1c77da9cfda",
+            .hash = "raylib-6.0.0-whq8uNF7LwUWRySnFX8zFfVUSbzmbrZ9oLNBUR0W1U1x",
+        },
+    },
+    .minimum_zig_version = "0.16.0",
+    .paths = .{""},
+    .fingerprint = 0xad233139f291f54a,
+}
