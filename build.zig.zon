@@ -3,8 +3,8 @@
     .version = "0.0.1",
     .dependencies = .{
         .nes = .{
-            .url = "git+https://github.com/burakssen/6soz-nes#f1c6dc4f19852012db9a58031a180cda4537cef9",
-            .hash = "_6soz_nes-0.0.1-2l771HLNAADjlrmewLRQp7kDj2YhNafMxKW-5G32D3jm",
+            .url = "git+https://github.com/burakssen/6soz-nes#0fad708c22fb65578bd3f5a2274fa93effa2b616",
+            .hash = "_6soz_nes-0.0.1-2l771LtYAQAjcNy111FLmh6ozWbbyVR2B4b6d8WbYyt7",
         },
         .raylib = .{
             .url = "git+https://github.com/raysan5/raylib#c04e57399acfc860a68ac0c11ff6d1c77da9cfda",

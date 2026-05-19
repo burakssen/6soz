@@ -77,13 +77,25 @@ pub const Backend = union(BackendType) {
     pub fn step(self: *Self) !StepResult {
         return switch (self.*) {
             .nes => |*nes| blk: {
-                const result = try nes.step();
+                const result = try nes.stepFrame();
                 break :blk .{
                     .cycles = result.cycles,
                     .audio = result.audio,
                 };
             },
         };
+    }
+
+    pub fn saveRam(self: *const Self) ?[]const u8 {
+        return switch (self.*) {
+            .nes => |*nes| nes.saveRam(),
+        };
+    }
+
+    pub fn loadSaveRam(self: *Self, data: []const u8) !void {
+        switch (self.*) {
+            .nes => |*nes| try nes.loadSaveRam(data),
+        }
     }
 
     pub fn framebuffer(self: *const Self) []const u32 {
@@ -113,12 +125,6 @@ pub const Backend = union(BackendType) {
     pub fn maxRomSize(self: *const Self) usize {
         return switch (self.*) {
             .nes => 1024 * 1024,
-        };
-    }
-
-    pub fn frameCpuCycles(self: *const Self) f64 {
-        return switch (self.*) {
-            .nes => 1_789_773.0 / 60.0988,
         };
     }
 };

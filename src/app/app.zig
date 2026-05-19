@@ -14,7 +14,6 @@ allocator: std.mem.Allocator,
 backend: Backend,
 video: Video,
 audio: Audio,
-cycle_remainder: f64 = 0,
 
 pub fn init(io: std.Io, allocator: std.mem.Allocator, backend: Backend) !App {
     var owned_backend = backend;
@@ -44,31 +43,52 @@ pub fn deinit(self: *App) void {
 }
 
 pub fn run(self: *App, rom_path: []const u8) !void {
+    var save_path: ?[]u8 = null;
+    defer if (save_path) |path| self.allocator.free(path);
+
     if (rom_path.len == 0) {
         try self.backend.load(&.{});
     } else {
         const rom_data = try std.Io.Dir.cwd().readFileAlloc(self.io, rom_path, self.allocator, .limited(self.backend.maxRomSize()));
         defer self.allocator.free(rom_data);
         try self.backend.load(rom_data);
+
+        save_path = try std.fmt.allocPrint(self.allocator, "{s}.sav", .{rom_path});
+        try self.loadSaveRam(save_path.?);
     }
     self.backend.reset();
 
     while (!rl.WindowShouldClose()) {
         self.backend.setInput(Input.read());
 
-        var cycles: u32 = 0;
-        const cycle_budget_float = self.backend.frameCpuCycles() + self.cycle_remainder;
-        const cycle_budget = @as(u32, @intFromFloat(@floor(cycle_budget_float)));
-        self.cycle_remainder = cycle_budget_float - @as(f64, @floatFromInt(cycle_budget));
-        while (cycles < cycle_budget) {
-            const result = try self.backend.step();
-            cycles += result.cycles;
-            self.audio.pushSamples(result.audio);
-        }
+        const result = try self.backend.step();
+        self.audio.pushSamples(result.audio);
 
         try self.update(self.backend.framebuffer());
         try self.render();
     }
+
+    if (save_path) |path| {
+        try self.writeSaveRam(path);
+    }
+}
+
+fn loadSaveRam(self: *App, save_path: []const u8) !void {
+    const save_data = std.Io.Dir.cwd().readFileAlloc(self.io, save_path, self.allocator, .limited(1024 * 1024)) catch |err| switch (err) {
+        error.FileNotFound => return,
+        else => |e| return e,
+    };
+    defer self.allocator.free(save_data);
+
+    try self.backend.loadSaveRam(save_data);
+}
+
+fn writeSaveRam(self: *App, save_path: []const u8) !void {
+    const save_data = self.backend.saveRam() orelse return;
+    try std.Io.Dir.cwd().writeFile(self.io, .{
+        .sub_path = save_path,
+        .data = save_data,
+    });
 }
 
 fn update(self: *App, frame: []const u32) !void {
