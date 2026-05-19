@@ -1,7 +1,6 @@
 # 6soz
 
-6soz is a Zig emulator frontend with a static backend registry. The current
-backend is NES.
+6soz is an retro emulator software, currently it only supports nes with its simples cartridge format.
 
 ## Requirements
 
@@ -16,5 +15,5 @@ zig build
 ## Run
 
 ```sh
-zig build run -- nes roms/mario.nes
+zig build run -Doptimize=ReleaseFast -- nes roms/mario.nes
 ```
