@@ -2,17 +2,13 @@
     .name = ._6soz,
     .version = "0.0.1",
     .dependencies = .{
-        .nes = .{
-            .url = "git+https://github.com/burakssen/6soz-nes#2d347ebfdbbb7b5591042c53dc8c8f72e9a71eb7",
-            .hash = "_6soz_nes-0.0.1-2l771EhuAQBRErXFMMALk5UzXic3AIPnrgDIKiAejR05",
-        },
         .raylib = .{
             .url = "git+https://github.com/raysan5/raylib#c04e57399acfc860a68ac0c11ff6d1c77da9cfda",
             .hash = "raylib-6.0.0-whq8uNF7LwUWRySnFX8zFfVUSbzmbrZ9oLNBUR0W1U1x",
         },
-        ._6soz_nes = .{
-            .url = "../6soz-nes",
-            .hash = "_6soz_nes-0.0.1-2l771HXhExnu1Bamcy1sWnhAn7A9D8C0sm9E5OAdioP-",
+        .nes = .{
+            .url = "git+https://github.com/burakssen/6soz-nes#2d347ebfdbbb7b5591042c53dc8c8f72e9a71eb7",
+            .hash = "_6soz_nes-0.0.1-2l771EhuAQBRErXFMMALk5UzXic3AIPnrgDIKiAejR05",
         },
     },
     .minimum_zig_version = "0.16.0",
