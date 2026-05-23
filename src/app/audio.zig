@@ -16,10 +16,16 @@ out: [BufferFrames]f32 = [_]f32{0} ** BufferFrames,
 underruns: u64 = 0,
 overflows: u64 = 0,
 
-pub fn init() Audio {
+pub fn init() !Audio {
     rl.InitAudioDevice();
+    errdefer rl.CloseAudioDevice();
+    if (!rl.IsAudioDeviceReady()) return error.AudioDeviceInitFailed;
+
     rl.SetAudioStreamBufferSizeDefault(BufferFrames);
     const stream = rl.LoadAudioStream(SampleRate, 32, 1);
+    if (!rl.IsAudioStreamValid(stream)) return error.AudioStreamInitFailed;
+    errdefer rl.UnloadAudioStream(stream);
+
     var audio = Audio{ .stream = stream };
     audio.queue.prefillSilence(StartupPrefillFrames);
     rl.PlayAudioStream(stream);
@@ -107,3 +113,23 @@ const AudioQueue = struct {
         self.len -= n;
     }
 };
+
+test "AudioQueue drops oldest samples when full" {
+    var queue = AudioQueue{};
+    const samples = [_]f32{1} ** (QueueFrames + 3);
+
+    const dropped = queue.pushSlice(&samples);
+
+    try std.testing.expectEqual(@as(usize, 3), dropped);
+    try std.testing.expectEqual(@as(usize, QueueFrames), queue.len);
+}
+
+test "AudioQueue reports missing samples as silence" {
+    var queue = AudioQueue{};
+    var out: [4]f32 = undefined;
+
+    const missing = queue.popChunk(&out);
+
+    try std.testing.expectEqual(@as(usize, out.len), missing);
+    try std.testing.expectEqualSlices(f32, &[_]f32{ 0, 0, 0, 0 }, &out);
+}

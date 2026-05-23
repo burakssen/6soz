@@ -22,16 +22,19 @@ pub fn init(io: std.Io, allocator: std.mem.Allocator, backend: Backend) !App {
     const scale = owned_backend.scale();
     rl.InitWindow(owned_backend.width() * @as(c_int, @intFromFloat(scale)), owned_backend.height() * @as(c_int, @intFromFloat(scale)), "6soz Emulator");
     errdefer rl.CloseWindow();
+    if (!rl.IsWindowReady()) return error.WindowInitFailed;
 
     rl.SetTargetFPS(60);
-    const video = try Video.init(allocator, owned_backend.width(), owned_backend.height(), scale);
+    var video = try Video.init(allocator, owned_backend.width(), owned_backend.height(), scale);
+    errdefer video.deinit();
+    const audio = try Audio.init();
 
     return .{
         .io = io,
         .allocator = allocator,
         .backend = owned_backend,
         .video = video,
-        .audio = Audio.init(),
+        .audio = audio,
     };
 }
 
@@ -69,7 +72,9 @@ pub fn run(self: *App, rom_path: []const u8) !void {
     }
 
     if (save_path) |path| {
-        try self.writeSaveRam(path);
+        self.writeSaveRam(path) catch |err| {
+            std.debug.print("Warning: failed to write save RAM to {s}: {s}\n", .{ path, @errorName(err) });
+        };
     }
 }
 
@@ -80,7 +85,12 @@ fn loadSaveRam(self: *App, save_path: []const u8) !void {
     };
     defer self.allocator.free(save_data);
 
-    try self.backend.loadSaveRam(save_data);
+    self.backend.loadSaveRam(save_data) catch |err| switch (err) {
+        error.NoSaveRam, error.InvalidSaveRamSize => {
+            std.debug.print("Warning: ignoring save RAM from {s}: {s}\n", .{ save_path, @errorName(err) });
+        },
+        else => |e| return e,
+    };
 }
 
 fn writeSaveRam(self: *App, save_path: []const u8) !void {
@@ -93,7 +103,7 @@ fn writeSaveRam(self: *App, save_path: []const u8) !void {
 
 fn update(self: *App, frame: []const u32) !void {
     self.audio.flush();
-    self.video.updateFrame(frame);
+    try self.video.updateFrame(frame);
     self.video.updateTexture();
 }
 

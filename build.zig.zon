@@ -7,8 +7,8 @@
             .hash = "raylib-6.0.0-whq8uNF7LwUWRySnFX8zFfVUSbzmbrZ9oLNBUR0W1U1x",
         },
         .nes = .{
-            .url = "git+https://github.com/burakssen/6soz-nes#2d347ebfdbbb7b5591042c53dc8c8f72e9a71eb7",
-            .hash = "_6soz_nes-0.0.1-2l771EhuAQBRErXFMMALk5UzXic3AIPnrgDIKiAejR05",
+            .url = "git+https://github.com/burakssen/6soz-nes#59e029a60bf85bf77e1b7085e1be61fd21e98834",
+            .hash = "_6soz_nes-0.0.1-2l771EedAQADS2dP5vRil5bRw6SldPqljsTNYDo1Y0hN",
         },
     },
     .minimum_zig_version = "0.16.0",

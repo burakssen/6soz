@@ -10,11 +10,13 @@ scale: f32,
 
 pub fn init(allocator: std.mem.Allocator, width: c_int, height: c_int, scale: f32) !Video {
     const pixels = try allocator.alloc(u32, @as(usize, @intCast(width * height)));
+    errdefer allocator.free(pixels);
     @memset(pixels, 0);
 
     const image = rl.GenImageColor(width, height, rl.BLACK);
     const texture = rl.LoadTextureFromImage(image);
     rl.UnloadImage(image);
+    if (!rl.IsTextureValid(texture)) return error.TextureInitFailed;
 
     return .{
         .allocator = allocator,
@@ -29,9 +31,10 @@ pub fn deinit(self: *Video) void {
     self.allocator.free(self.pixels);
 }
 
-pub fn updateFrame(self: *Video, frame: []const u32) void {
-    const count = @min(frame.len, self.pixels.len);
-    for (frame[0..count], 0..) |color, i| {
+pub fn updateFrame(self: *Video, frame: []const u32) !void {
+    if (frame.len != self.pixels.len) return error.InvalidFramebufferSize;
+
+    for (frame, 0..) |color, i| {
         const r = (color >> 16) & 0xFF;
         const g = (color >> 8) & 0xFF;
         const b = color & 0xFF;
@@ -45,4 +48,30 @@ pub fn updateTexture(self: *Video) void {
 
 pub fn draw(self: *const Video) void {
     rl.DrawTextureEx(self.texture, .{ .x = 0, .y = 0 }, 0, self.scale, rl.WHITE);
+}
+
+test "updateFrame converts RGB framebuffer to raylib pixel order" {
+    var pixels = [_]u32{0};
+    var video = Video{
+        .allocator = std.testing.allocator,
+        .texture = undefined,
+        .pixels = &pixels,
+        .scale = 1,
+    };
+
+    try video.updateFrame(&[_]u32{0x00123456});
+
+    try std.testing.expectEqual(@as(u32, 0xFF563412), pixels[0]);
+}
+
+test "updateFrame rejects framebuffer size mismatch" {
+    var pixels = [_]u32{ 0, 0 };
+    var video = Video{
+        .allocator = std.testing.allocator,
+        .texture = undefined,
+        .pixels = &pixels,
+        .scale = 1,
+    };
+
+    try std.testing.expectError(error.InvalidFramebufferSize, video.updateFrame(&[_]u32{0}));
 }
