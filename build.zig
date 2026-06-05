@@ -19,13 +19,19 @@ pub fn build(b: *std.Build) void {
     });
 
     const nes_mod = nes_dep.module("nes");
-
-    const backend_mod = b.createModule(.{
+    const gameboy_dep = b.dependency("gameboy", .{
         .target = target,
         .optimize = optimize,
-        .root_source_file = b.path("src/backends/backend.zig"),
+    });
+    const gameboy_mod = gameboy_dep.module("gameboy");
+
+    const emulator_mod = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("src/emulator.zig"),
         .imports = &.{
             .{ .name = "nes", .module = nes_mod },
+            .{ .name = "gameboy", .module = gameboy_mod },
         },
     });
 
@@ -34,7 +40,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .root_source_file = b.path("src/app/app.zig"),
         .imports = &.{
-            .{ .name = "backend", .module = backend_mod },
+            .{ .name = "emulator", .module = emulator_mod },
         },
     });
 
@@ -47,7 +53,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/main.zig"),
         .imports = &.{
             .{ .name = "app", .module = app_mod },
-            .{ .name = "backend", .module = backend_mod },
+            .{ .name = "emulator", .module = emulator_mod },
         },
     });
 
@@ -67,8 +73,8 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the 6soz executable");
     run_step.dependOn(&run_cmd.step);
 
-    const backend_tests = b.addTest(.{
-        .root_module = backend_mod,
+    const emulator_tests = b.addTest(.{
+        .root_module = emulator_mod,
     });
 
     const app_tests = b.addTest(.{
@@ -76,6 +82,6 @@ pub fn build(b: *std.Build) void {
     });
 
     const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&b.addRunArtifact(backend_tests).step);
+    test_step.dependOn(&b.addRunArtifact(emulator_tests).step);
     test_step.dependOn(&b.addRunArtifact(app_tests).step);
 }

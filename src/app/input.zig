@@ -1,7 +1,7 @@
 const rl = @import("raylib.zig").rl;
-const Backend = @import("backend");
+const emulator = @import("emulator");
 
-pub fn read() Backend.InputState {
+pub fn read() emulator.InputState {
     return .{
         .a = rl.IsKeyDown(rl.KEY_Z),
         .b = rl.IsKeyDown(rl.KEY_X),

@@ -2,7 +2,6 @@ const std = @import("std");
 
 const rl = @import("raylib.zig").rl;
 
-const SampleRate = 48_000;
 const BufferFrames = 512;
 const QueueFrames = 16_384;
 const StartupPrefillFrames = BufferFrames * 4;
@@ -16,13 +15,13 @@ out: [BufferFrames]f32 = [_]f32{0} ** BufferFrames,
 underruns: u64 = 0,
 overflows: u64 = 0,
 
-pub fn init() !Audio {
+pub fn init(sample_rate: u32) !Audio {
     rl.InitAudioDevice();
     errdefer rl.CloseAudioDevice();
     if (!rl.IsAudioDeviceReady()) return error.AudioDeviceInitFailed;
 
     rl.SetAudioStreamBufferSizeDefault(BufferFrames);
-    const stream = rl.LoadAudioStream(SampleRate, 32, 1);
+    const stream = rl.LoadAudioStream(sample_rate, 32, 1);
     if (!rl.IsAudioStreamValid(stream)) return error.AudioStreamInitFailed;
     errdefer rl.UnloadAudioStream(stream);
 
