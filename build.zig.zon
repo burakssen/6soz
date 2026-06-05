@@ -7,12 +7,12 @@
             .hash = "raylib-6.0.0-whq8uNF7LwUWRySnFX8zFfVUSbzmbrZ9oLNBUR0W1U1x",
         },
         .nes = .{
-            .url = "../6soz-nes",
-            .hash = "_6soz_nes-0.0.1-2l771LW7AQC0CS5wJu6DGGewtTgmZNTb-V8kVyPC86XR",
+            .url = "git+https://github.com/burakssen/6soz-nes#005edb427e33174afd9166b78267405f67ceb14b",
+            .hash = "_6soz_nes-0.0.1-2l771Hm7AQDBkP6cgli2g2oJ1g4-m-0gEBGJgx2_pduh",
         },
         .gameboy = .{
-            .url = "../6soz-gameboy",
-            .hash = "_6soz_gameboy-0.0.1-TC08mgTyAADYJfImyoc72SuxoxtE6cuqpCRjB37qqz8s",
+            .url = "git+https://github.com/burakssen/6soz-gameboy#009419a5120edc669e0653ad5e510666775c6227",
+            .hash = "_6soz_gameboy-0.0.1-TC08mmT0AABqEOeOp2ZENdB3hvX2hAlu58acoGSZqSPn",
         },
     },
     .minimum_zig_version = "0.16.0",
