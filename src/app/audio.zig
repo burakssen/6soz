@@ -43,6 +43,11 @@ pub fn pushSamples(self: *Audio, samples: []const f32) void {
     self.flush();
 }
 
+pub fn resetSilence(self: *Audio) void {
+    self.queue.clear();
+    self.queue.prefillSilence(StartupPrefillFrames);
+}
+
 pub fn flush(self: *Audio) void {
     while (rl.IsAudioStreamProcessed(self.stream)) {
         const missing = self.queue.popChunk(&self.out);
@@ -97,6 +102,12 @@ const AudioQueue = struct {
             self.write = (self.write + 1) % self.data.len;
             self.len += 1;
         }
+    }
+
+    fn clear(self: *AudioQueue) void {
+        self.read = 0;
+        self.write = 0;
+        self.len = 0;
     }
 
     fn trimOldestTo(self: *AudioQueue, target: usize) usize {
