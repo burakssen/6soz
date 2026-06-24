@@ -36,6 +36,7 @@
 
 <body>
   <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+
   <script>
     const canvas = document.querySelector("#canvas");
     const audioContexts = [];
@@ -58,27 +59,23 @@
 
     function resumeAudio() {
       for (const context of audioContexts) {
-        if (context.state === "suspended") context.resume();
+        if (context.state === "suspended") {
+          context.resume();
+        }
       }
     }
 
     function resizeCanvasCss() {
       const width = canvas.width || 1;
       const height = canvas.height || 1;
+
       const maxWidth = window.innerWidth;
       const maxHeight = window.innerHeight;
-      const integerScale = Math.floor(Math.min(maxWidth / width, maxHeight / height));
 
-      let cssWidth;
-      let cssHeight;
-      if (integerScale >= 1) {
-        cssWidth = width * integerScale;
-        cssHeight = height * integerScale;
-      } else {
-        const fitScale = Math.min(maxWidth / width, maxHeight / height);
-        cssWidth = Math.floor(width * fitScale);
-        cssHeight = Math.floor(height * fitScale);
-      }
+      const scale = Math.min(maxWidth / width, maxHeight / height);
+
+      const cssWidth = Math.floor(width * scale);
+      const cssHeight = Math.floor(height * scale);
 
       canvas.style.setProperty("width", `${Math.max(1, cssWidth)}px`, "important");
       canvas.style.setProperty("height", `${Math.max(1, cssHeight)}px`, "important");
@@ -87,6 +84,7 @@
     window.addEventListener("resize", resizeCanvasCss);
     canvas.addEventListener("pointerdown", resumeAudio);
     window.addEventListener("keydown", resumeAudio);
+
     canvas.addEventListener("webglcontextlost", function (event) {
       event.preventDefault();
       console.error("WebGL context lost. Reload the page to continue.");
@@ -96,28 +94,44 @@
       attributes: true,
       attributeFilter: ["width", "height"],
     });
+
     resizeCanvasCss();
 
     var Module = {
       preRun: [],
       postRun: [resizeCanvasCss],
+
       print(text) {
-        if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(" ");
+        if (arguments.length > 1) {
+          text = Array.prototype.slice.call(arguments).join(" ");
+        }
         console.log(text);
       },
+
       printErr(text) {
-        if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(" ");
+        if (arguments.length > 1) {
+          text = Array.prototype.slice.call(arguments).join(" ");
+        }
         console.error(text);
       },
+
       canvas,
+
       setStatus(text) {
-        if (text) console.log(text);
+        if (text) {
+          console.log(text);
+        }
       },
+
       totalDependencies: 0,
+
       monitorRunDependencies(left) {
         this.totalDependencies = Math.max(this.totalDependencies, left);
+
         if (left) {
-          Module.setStatus(`Preparing... (${this.totalDependencies - left}/${this.totalDependencies})`);
+          Module.setStatus(
+            `Preparing... (${this.totalDependencies - left}/${this.totalDependencies})`
+          );
         }
       },
     };
@@ -126,6 +140,7 @@
       console.error(message, source, line, column, error && error.stack);
     };
   </script>
+
   {{{ SCRIPT }}}
 </body>
 
