@@ -2,17 +2,29 @@ const std = @import("std");
 
 const App = @import("app");
 const emulator = @import("emulator");
+const manifest = @import("web_rom_manifest");
 const rl = @import("raylib").rl;
+const ui = @import("menu_ui");
 
 extern fn emscripten_set_main_loop(*const fn () callconv(.c) void, c_int, c_int) void;
 extern fn emscripten_cancel_main_loop() void;
 
 pub const panic = std.debug.FullPanic(std.debug.defaultPanic);
 
-const default_rom_path = "/roms/nes/ravens_gate_mmc1.nes";
-
-var app: ?App = null;
 const allocator = std.heap.c_allocator;
+
+const Screen = enum {
+    systems,
+    roms,
+    game,
+};
+
+var screen: Screen = .systems;
+var system_index: usize = 0;
+var rom_index: usize = 0;
+var scroll: usize = 0;
+var app: ?App = null;
+var error_message: ?[]const u8 = null;
 
 export fn main(argc: c_int, argv: [*]?[*:0]u8) c_int {
     _ = argc;
@@ -26,31 +38,177 @@ export fn main(argc: c_int, argv: [*]?[*:0]u8) c_int {
 }
 
 fn start() !void {
-    var selected_emulator = emulator.Emulator.init(.nes, allocator);
-    errdefer selected_emulator.deinit();
-
-    app = try App.init(undefined, allocator, selected_emulator);
-    errdefer {
-        if (app) |*running| running.deinit();
-        app = null;
-    }
-
-    var data_size: c_int = 0;
-    const rom_ptr = rl.LoadFileData(default_rom_path, &data_size);
-    if (rom_ptr == null or data_size <= 0) return error.DefaultRomLoadFailed;
-    defer rl.UnloadFileData(rom_ptr);
-
-    const rom_data = rom_ptr[0..@as(usize, @intCast(data_size))];
-    try app.?.loadRom(rom_data, .auto);
+    rl.InitWindow(ui.width, ui.height, "6soz");
+    if (!rl.IsWindowReady()) return error.WindowInitFailed;
+    rl.SetExitKey(0);
 
     emscripten_set_main_loop(updateFrame, 0, 0);
 }
 
 fn updateFrame() callconv(.c) void {
-    if (app) |*running| {
-        running.runFrame() catch |err| {
-            std.log.err("web emulator frame failed: {s}", .{@errorName(err)});
-            emscripten_cancel_main_loop();
+    updateFrameInner() catch |err| {
+        std.log.err("web emulator frame failed: {s}", .{@errorName(err)});
+        emscripten_cancel_main_loop();
+    };
+}
+
+fn updateFrameInner() !void {
+    if (rl.WindowShouldClose()) {
+        emscripten_cancel_main_loop();
+        return;
+    }
+
+    switch (screen) {
+        .systems => updateSystems(),
+        .roms => try updateRoms(),
+        .game => try updateGame(),
+    }
+}
+
+fn updateSystems() void {
+    updateIndex(&system_index, ui.systems.len);
+    if (rl.IsKeyPressed(rl.KEY_ENTER)) {
+        screen = .roms;
+        rom_index = 0;
+        scroll = 0;
+        error_message = null;
+    }
+
+    ui.drawSystemMenu(system_index, "Enter select");
+}
+
+fn updateRoms() !void {
+    const kind = ui.systems[system_index];
+    const count = playableCount(kind);
+
+    if (rl.IsKeyPressed(rl.KEY_ESCAPE)) {
+        screen = .systems;
+        error_message = null;
+        ui.drawSystemMenu(system_index, "Enter select");
+        return;
+    }
+
+    updateRomSelection(count);
+
+    if (rl.IsKeyPressed(rl.KEY_ENTER) and count != 0) {
+        const entry = playableEntryAt(kind, rom_index).?;
+        startGame(entry) catch |err| {
+            error_message = @errorName(err);
         };
     }
+
+    renderRoms(kind, count);
+}
+
+fn updateGame() !void {
+    if (rl.IsKeyPressed(rl.KEY_ESCAPE)) {
+        returnToMenu();
+        renderRoms(ui.systems[system_index], playableCount(ui.systems[system_index]));
+        return;
+    }
+
+    if (app) |*running| {
+        try running.runFrame();
+    }
+}
+
+fn startGame(entry: manifest.RomEntry) !void {
+    if (app) |*running| {
+        running.deinit();
+        app = null;
+    }
+
+    var selected_emulator = emulator.Emulator.init(entry.kind, allocator);
+    errdefer selected_emulator.deinit();
+
+    app = try App.initInOpenWindow(undefined, allocator, selected_emulator, .{});
+    errdefer {
+        if (app) |*running| running.deinit();
+        app = null;
+    }
+
+    var rom_size: c_int = 0;
+    const rom_ptr = rl.LoadFileData(entry.path.ptr, &rom_size);
+    if (rom_ptr == null or rom_size <= 0) return error.RomLoadFailed;
+    defer rl.UnloadFileData(rom_ptr);
+
+    var boot_size: c_int = 0;
+    var boot_ptr: ?[*]u8 = null;
+    defer if (boot_ptr) |ptr| rl.UnloadFileData(ptr);
+
+    if (entry.kind == .gameboy) {
+        const boot_path = manifest.dmg_boot_rom_path orelse return error.BootRomRequired;
+        boot_ptr = rl.LoadFileData(boot_path.ptr, &boot_size);
+        if (boot_ptr == null or boot_size <= 0) return error.BootRomLoadFailed;
+    }
+
+    const rom_data = rom_ptr[0..@as(usize, @intCast(rom_size))];
+    const boot_data = if (boot_ptr) |ptr| ptr[0..@as(usize, @intCast(boot_size))] else null;
+    try app.?.loadRomWithBoot(rom_data, boot_data, .auto);
+
+    screen = .game;
+    error_message = null;
+}
+
+fn returnToMenu() void {
+    if (app) |*running| {
+        running.deinit();
+        app = null;
+    }
+    rl.SetWindowSize(ui.width, ui.height);
+    screen = .roms;
+    error_message = null;
+}
+
+fn renderRoms(kind: emulator.EmulatorKind, count: usize) void {
+    ui.begin();
+    defer rl.EndDrawing();
+
+    ui.drawFmt("{s} ROMs", .{ui.displayName(kind)}, 32, 26, 30, rl.RAYWHITE);
+
+    if (count == 0) {
+        ui.drawText("No compatible ROMs were preloaded.", 34, 110, 22, rl.YELLOW);
+        ui.drawText("Escape back", 34, 430, 18, rl.GRAY);
+        return;
+    }
+
+    var index = scroll;
+    while (index < @min(count, scroll + ui.visible_rows)) : (index += 1) {
+        const y: c_int = 86 + @as(c_int, @intCast(index - scroll)) * 28;
+        ui.drawFmt("{s}{s}", .{ if (index == rom_index) "> " else "  ", playableEntryAt(kind, index).?.name }, 42, y, 20, ui.selectedColor(index == rom_index));
+    }
+
+    if (error_message) |message| {
+        ui.drawFmt("{s}", .{message}, 34, 386, 18, rl.RED);
+    }
+    ui.drawText("Enter launch  Escape back", 34, 430, 18, rl.GRAY);
+}
+
+fn playableCount(kind: emulator.EmulatorKind) usize {
+    var count: usize = 0;
+    for (manifest.entries) |entry| {
+        if (entry.kind == kind and !entry.boot) count += 1;
+    }
+    return count;
+}
+
+fn playableEntryAt(kind: emulator.EmulatorKind, index: usize) ?manifest.RomEntry {
+    var current: usize = 0;
+    for (manifest.entries) |entry| {
+        if (entry.kind != kind or entry.boot) continue;
+        if (current == index) return entry;
+        current += 1;
+    }
+    return null;
+}
+
+fn updateIndex(index: *usize, len: usize) void {
+    if (rl.IsKeyPressed(rl.KEY_UP)) index.* = ui.previousIndex(index.*, len);
+    if (rl.IsKeyPressed(rl.KEY_DOWN)) index.* = ui.nextIndex(index.*, len);
+}
+
+fn updateRomSelection(count: usize) void {
+    if (count == 0) return;
+    updateIndex(&rom_index, count);
+    ui.adjustScroll(&scroll, rom_index);
 }

@@ -1,5 +1,6 @@
 const std = @import("std");
 const raylib = @import("raylib");
+const web_roms = @import("build/web_roms.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -112,6 +113,18 @@ pub fn build(b: *std.Build) void {
 
     // Web build
     if (is_web) {
+        const web_rom_assets = web_roms.collect(b);
+        const generated = b.addWriteFiles();
+        const web_manifest_path = generated.add("web_rom_manifest.zig", web_roms.manifestSource(b, web_rom_assets));
+        const web_manifest_mod = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+            .root_source_file = web_manifest_path,
+            .imports = &.{
+                .{ .name = "emulator", .module = emulator_mod },
+            },
+        });
+
         const web_root_mod = b.createModule(.{
             .target = target,
             .optimize = optimize,
@@ -120,6 +133,8 @@ pub fn build(b: *std.Build) void {
                 .{ .name = "app", .module = app_mod },
                 .{ .name = "emulator", .module = emulator_mod },
                 .{ .name = "raylib", .module = raylib_mod },
+                .{ .name = "menu_ui", .module = menu_ui_mod },
+                .{ .name = "web_rom_manifest", .module = web_manifest_mod },
             },
         });
         web_root_mod.linkLibrary(raylib_dep.artifact("raylib"));
@@ -133,7 +148,7 @@ pub fn build(b: *std.Build) void {
 
         var emcc_flags = raylib.emsdk.emccDefaultFlags(b.allocator, .{
             .optimize = optimize,
-            .asyncify = false,
+            .asyncify = true,
         });
         emcc_flags.put("-sMINIFY_HTML=0", {}) catch @panic("OOM");
 
@@ -154,12 +169,7 @@ pub fn build(b: *std.Build) void {
                 .flags = emcc_flags,
                 .settings = emcc_settings,
                 .use_preload_plugins = true,
-                .preload_paths = &.{
-                    .{
-                        .src_path = "roms/nes/ravens_gate_mmc1.nes",
-                        .virtual_path = "/roms/nes/ravens_gate_mmc1.nes",
-                    },
-                },
+                .preload_paths = web_roms.preloadPaths(b, web_rom_assets),
                 .install_dir = .{ .custom = "web" },
                 .shell_file_path = b.path("src/web/shell.html"),
             },
