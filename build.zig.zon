@@ -24,6 +24,6 @@
         },
     },
     .minimum_zig_version = "0.16.0",
-    .paths = .{ "build.zig", "build.zig.zon", "src", "roms/nes/ravens_gate_mmc1.nes", "README.md", "LICENCE" },
+    .paths = .{ "build.zig", "build.zig.zon", "src", "config.zon", "roms/nes/ravens_gate_mmc1.nes", "README.md", "LICENCE" },
     .fingerprint = 0xad233139f291f54a,
 }

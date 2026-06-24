@@ -56,12 +56,43 @@ pub fn build(b: *std.Build) void {
     });
     raylib_mod.addIncludePath(raylib_dep.path("src"));
 
+    const menu_ui_mod = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("src/frontend/raylib/menu_ui.zig"),
+        .imports = &.{
+            .{ .name = "emulator", .module = emulator_mod },
+            .{ .name = "raylib", .module = raylib_mod },
+        },
+    });
+    menu_ui_mod.linkLibrary(raylib_dep.artifact("raylib"));
+    menu_ui_mod.addIncludePath(raylib_dep.path("src"));
+
     const session_mod = b.createModule(.{
         .target = target,
         .optimize = optimize,
         .root_source_file = b.path("src/host/session.zig"),
         .imports = &.{
             .{ .name = "emulator", .module = emulator_mod },
+        },
+    });
+
+    const config_mod = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("src/host/config.zig"),
+        .imports = &.{
+            .{ .name = "emulator", .module = emulator_mod },
+        },
+    });
+
+    const roms_mod = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("src/host/roms.zig"),
+        .imports = &.{
+            .{ .name = "emulator", .module = emulator_mod },
+            .{ .name = "config", .module = config_mod },
         },
     });
 
@@ -72,6 +103,7 @@ pub fn build(b: *std.Build) void {
         .imports = &.{
             .{ .name = "emulator", .module = emulator_mod },
             .{ .name = "session", .module = session_mod },
+            .{ .name = "config", .module = config_mod },
             .{ .name = "raylib", .module = raylib_mod },
         },
     });
@@ -138,13 +170,30 @@ pub fn build(b: *std.Build) void {
     }
 
     // Native executables
+    const menu_mod = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("src/frontend/raylib/menu.zig"),
+        .imports = &.{
+            .{ .name = "config", .module = config_mod },
+            .{ .name = "emulator", .module = emulator_mod },
+            .{ .name = "roms", .module = roms_mod },
+            .{ .name = "raylib", .module = raylib_mod },
+            .{ .name = "menu_ui", .module = menu_ui_mod },
+        },
+    });
+    menu_mod.linkLibrary(raylib_dep.artifact("raylib"));
+    menu_mod.addIncludePath(raylib_dep.path("src"));
+
     const main_mod = b.createModule(.{
         .target = target,
         .optimize = optimize,
         .root_source_file = b.path("src/cli/main.zig"),
         .imports = &.{
             .{ .name = "app", .module = app_mod },
+            .{ .name = "config", .module = config_mod },
             .{ .name = "emulator", .module = emulator_mod },
+            .{ .name = "menu", .module = menu_mod },
         },
     });
 
@@ -211,6 +260,8 @@ pub fn build(b: *std.Build) void {
         common_mod,
         emulator_mod,
         session_mod,
+        config_mod,
+        roms_mod,
         app_mod,
     }) |mod| {
         const tests = b.addTest(.{

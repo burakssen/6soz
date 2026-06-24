@@ -1,0 +1,20 @@
+.{
+    .roms_path = "roms",
+    .default_system = .nes,
+    .gameboy_model = .auto,
+    .boot_roms = .{ .dmg = "roms/gb/boot.rom.gb", .cgb = null },
+    .video = .{ .scale = null },
+    .audio = .{ .enabled = true },
+    .saves = .{ .save_dir = null, .state_dir = null },
+    .controls = .{
+        .a = "Z",
+        .b = "X",
+        .select = "RightShift",
+        .start = "Enter",
+        .up = "Up",
+        .down = "Down",
+        .left = "Left",
+        .right = "Right",
+    },
+    .last = .{ .system = .gameboy, .rom_path = "roms/gb/tobudx.gb" },
+}

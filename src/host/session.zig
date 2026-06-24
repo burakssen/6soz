@@ -11,6 +11,11 @@ emulator: EmulatorHost.Emulator,
 save_path: ?[]u8 = null,
 state_path: ?[]u8 = null,
 
+pub const LoadOptions = struct {
+    save_dir: ?[]const u8 = null,
+    state_dir: ?[]const u8 = null,
+};
+
 pub fn init(io: std.Io, allocator: std.mem.Allocator, selected_emulator: EmulatorHost.Emulator) Session {
     return .{
         .io = io,
@@ -35,6 +40,16 @@ pub fn loadRomPath(
     boot_rom_path: ?[]const u8,
     model: EmulatorHost.Model,
 ) !void {
+    try self.loadRomPathWithOptions(rom_path, boot_rom_path, model, .{});
+}
+
+pub fn loadRomPathWithOptions(
+    self: *Session,
+    rom_path: []const u8,
+    boot_rom_path: ?[]const u8,
+    model: EmulatorHost.Model,
+    options: LoadOptions,
+) !void {
     self.clearPaths();
 
     if (rom_path.len == 0) {
@@ -53,12 +68,18 @@ pub fn loadRomPath(
             return error.BootRomRequired;
         }
 
-        self.save_path = try save_paths.saveRamPath(self.allocator, rom_path);
+        self.save_path = if (options.save_dir) |dir|
+            try save_paths.saveRamPathInDir(self.allocator, dir, rom_path)
+        else
+            try save_paths.saveRamPath(self.allocator, rom_path);
         errdefer {
             self.allocator.free(self.save_path.?);
             self.save_path = null;
         }
-        self.state_path = try save_paths.statePath(self.allocator, rom_path);
+        self.state_path = if (options.state_dir) |dir|
+            try save_paths.statePathInDir(self.allocator, dir, rom_path)
+        else
+            try save_paths.statePath(self.allocator, rom_path);
         errdefer {
             self.allocator.free(self.state_path.?);
             self.state_path = null;
@@ -70,9 +91,23 @@ pub fn loadRomPath(
 }
 
 pub fn loadRomBytes(self: *Session, rom_data: []const u8, model: EmulatorHost.Model) !void {
+    try self.loadRomBytesWithBoot(rom_data, null, model);
+}
+
+pub fn loadRomBytesWithBoot(
+    self: *Session,
+    rom_data: []const u8,
+    boot_rom_data: ?[]const u8,
+    model: EmulatorHost.Model,
+) !void {
     self.clearPaths();
     try self.emulator.load(rom_data);
     try self.emulator.setModel(model);
+    if (boot_rom_data) |boot_rom| {
+        try self.emulator.loadBootRom(boot_rom);
+    } else if (self.emulator.requiresBootRom()) {
+        return error.BootRomRequired;
+    }
     try self.emulator.reset();
 }
 
