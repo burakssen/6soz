@@ -161,27 +161,27 @@ fn returnToMenu() void {
 }
 
 fn renderRoms(kind: emulator.EmulatorKind, count: usize) void {
-    ui.begin();
+    ui.beginFrame("Select ROM", "Preloaded files from roms/", "preload");
     defer rl.EndDrawing();
 
-    ui.drawFmt("{s} ROMs", .{ui.displayName(kind)}, 32, 26, 30, rl.RAYWHITE);
+    ui.drawFmt("{s} ROMs", .{ui.displayName(kind)}, 588, 48, 14, rl.GRAY);
+    ui.drawListPanel();
 
     if (count == 0) {
-        ui.drawText("No compatible ROMs were preloaded.", 34, 110, 22, rl.YELLOW);
-        ui.drawText("Escape back", 34, 430, 18, rl.GRAY);
+        ui.drawEmpty("No compatible ROMs were preloaded.");
+        ui.drawFooter("Escape back");
         return;
     }
 
     var index = scroll;
     while (index < @min(count, scroll + ui.visible_rows)) : (index += 1) {
-        const y: c_int = 86 + @as(c_int, @intCast(index - scroll)) * 28;
-        ui.drawFmt("{s}{s}", .{ if (index == rom_index) "> " else "  ", playableEntryAt(kind, index).?.name }, 42, y, 20, ui.selectedColor(index == rom_index));
+        ui.drawListRow(index - scroll, index == rom_index, playableEntryAt(kind, index).?.name);
     }
 
     if (error_message) |message| {
-        ui.drawFmt("{s}", .{message}, 34, 386, 18, rl.RED);
+        ui.drawError(message);
     }
-    ui.drawText("Enter launch  Escape back", 34, 430, 18, rl.GRAY);
+    ui.drawFooter("Enter launch  Escape back");
 }
 
 fn playableCount(kind: emulator.EmulatorKind) usize {

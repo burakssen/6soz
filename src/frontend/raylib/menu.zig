@@ -93,21 +93,21 @@ fn renderRoms(
     scroll: usize,
     error_message: ?[]const u8,
 ) void {
-    ui.begin();
+    ui.beginFrame("Select ROM", "Compatible files from config.zon", "config");
     defer rl.EndDrawing();
 
-    ui.drawFmt("{s} ROMs", .{ui.displayName(kind)}, 32, 26, 30, rl.RAYWHITE);
+    ui.drawFmt("{s} ROMs", .{ui.displayName(kind)}, 588, 48, 14, rl.GRAY);
+    ui.drawListPanel();
     if (entries.len == 0) {
-        ui.drawText("No compatible ROMs found.", 34, 110, 22, rl.YELLOW);
-        ui.drawText("Escape back", 34, 430, 18, rl.GRAY);
+        ui.drawEmpty("No compatible ROMs found.");
+        ui.drawFooter("Escape back");
         return;
     }
 
     for (entries[scroll..@min(entries.len, scroll + ui.visible_rows)], scroll..) |entry, index| {
-        const y: c_int = 86 + @as(c_int, @intCast(index - scroll)) * 28;
-        ui.drawFmt("{s}{s}", .{ if (index == selected) "> " else "  ", entry.name }, 42, y, 20, ui.selectedColor(index == selected));
+        ui.drawListRow(index - scroll, index == selected, entry.name);
     }
 
-    if (error_message) |message| ui.drawFmt("{s}", .{message}, 34, 386, 18, rl.RED);
-    ui.drawText("Enter launch  Escape back", 34, 430, 18, rl.GRAY);
+    if (error_message) |message| ui.drawError(message);
+    ui.drawFooter("Enter launch  Escape back");
 }
