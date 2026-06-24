@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const rl = @import("raylib.zig").rl;
+const rl = @import("raylib").rl;
 
 const BufferFrames = 512;
 const QueueFrames = 16_384;

@@ -1,4 +1,4 @@
-const rl = @import("raylib.zig").rl;
+const rl = @import("raylib").rl;
 const emulator = @import("emulator");
 
 pub fn read() emulator.InputState {

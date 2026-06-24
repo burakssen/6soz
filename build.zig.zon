@@ -6,6 +6,14 @@
             .url = "git+https://github.com/raysan5/raylib#c04e57399acfc860a68ac0c11ff6d1c77da9cfda",
             .hash = "raylib-6.0.0-whq8uNF7LwUWRySnFX8zFfVUSbzmbrZ9oLNBUR0W1U1x",
         },
+        .emsdk = .{
+            .url = "git+https://github.com/emscripten-core/emsdk#4.0.9",
+            .hash = "N-V-__8AAJl1DwBezhYo_VE6f53mPVm00R-Fk28NPW7P14EQ",
+        },
+        .zemscripten = .{
+            .url = "git+https://github.com/zig-gamedev/zemscripten#3fa4b778852226c7346bdcc3c1486e875a9a6d02",
+            .hash = "zemscripten-0.2.0-dev-sRlDqApRAACspTbAZnuNKWIzfWzSYgYkb2nWAXZ-tqqt",
+        },
         .nes = .{
             .url = "git+https://github.com/burakssen/6soz-nes#a66b84580b55b658d0ca4026ece515f9b1770e71",
             .hash = "_6soz_nes-0.0.1-2l771KVDAgAKhhsuYYxp-FA6up5TDgT0ha3Qwpj40WIB",
@@ -16,6 +24,6 @@
         },
     },
     .minimum_zig_version = "0.16.0",
-    .paths = .{ "build.zig", "build.zig.zon", "src", "README.md", "LICENCE" },
+    .paths = .{ "build.zig", "build.zig.zon", "src", "roms/nes/ravens_gate_mmc1.nes", "README.md", "LICENCE" },
     .fingerprint = 0xad233139f291f54a,
 }

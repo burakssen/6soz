@@ -4,13 +4,19 @@
 
 ## Architecture
 
-The project is split into several decoupled packages to separate concerns and allow independent evolution of CPU cores and system components:
+The project is split into decoupled packages and host layers so frontend code,
+emulator orchestration, and core emulation can evolve independently:
 
-- **`6soz`**: The main host application (CLI, video, audio, input loops via raylib).
-- **`6soz-nes`**: The NES emulator core backend.
-- **`6soz-gameboy`**: The Game Boy (DMG) and Game Boy Color (CGB) emulator core backend.
-- **`6soz-mos6502`**: A standalone MOS 6502 / Ricoh 2A03 CPU module used by the NES core.
-- **`6soz-lr35902`**: A standalone Sharp LR35902 CPU module used by the Game Boy core.
+- **`6soz`**: Host application, CLI tools, web entrypoint, and raylib frontend.
+- **`src/common`**: Shared host contracts and state codec helpers.
+- **`src/host`**: System facade and emulator-facing host logic.
+- **`src/frontend/raylib`**: Window, rendering, audio, and input adapters.
+- **`src/cli`**: Native run, benchmark, and smoke-check entrypoints.
+- **`src/web`**: Browser entrypoint and custom Emscripten shell.
+- **`6soz-nes`**: NES emulator core backend.
+- **`6soz-gameboy`**: Game Boy (DMG) and Game Boy Color (CGB) emulator core backend.
+- **`6soz-mos6502`**: Standalone MOS 6502 / Ricoh 2A03 CPU module used by the NES core.
+- **`6soz-lr35902`**: Standalone Sharp LR35902 CPU module used by the Game Boy core.
 
 ## Images
 
@@ -28,6 +34,19 @@ The project is split into several decoupled packages to separate concerns and al
 ```sh
 zig build
 ```
+
+## Web Build
+
+Build the browser version with:
+
+```sh
+zig build web -Doptimize=ReleaseFast
+```
+
+The web build writes `zig-out/web/index.html` plus the generated JavaScript,
+WebAssembly, and data files. Serve `zig-out/web` over HTTP and open
+`index.html`; the browser build currently boots the NES emulator directly into
+`roms/nes/ravens_gate_mmc1.nes`.
 
 ## Run
 

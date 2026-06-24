@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>6soz</title>
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #111;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+    }
+
+    #canvas {
+      display: block;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      background: #000;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      outline: none;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+  <script>
+    const canvas = document.querySelector("#canvas");
+    const audioContexts = [];
+
+    function installAudioContextProxy(name) {
+      const AudioContextCtor = self[name];
+      if (!AudioContextCtor) return;
+
+      self[name] = new Proxy(AudioContextCtor, {
+        construct(target, args) {
+          const context = new target(...args);
+          audioContexts.push(context);
+          return context;
+        },
+      });
+    }
+
+    installAudioContextProxy("AudioContext");
+    installAudioContextProxy("webkitAudioContext");
+
+    function resumeAudio() {
+      for (const context of audioContexts) {
+        if (context.state === "suspended") context.resume();
+      }
+    }
+
+    function resizeCanvasCss() {
+      const width = canvas.width || 1;
+      const height = canvas.height || 1;
+      const maxWidth = window.innerWidth;
+      const maxHeight = window.innerHeight;
+      const integerScale = Math.floor(Math.min(maxWidth / width, maxHeight / height));
+
+      let cssWidth;
+      let cssHeight;
+      if (integerScale >= 1) {
+        cssWidth = width * integerScale;
+        cssHeight = height * integerScale;
+      } else {
+        const fitScale = Math.min(maxWidth / width, maxHeight / height);
+        cssWidth = Math.floor(width * fitScale);
+        cssHeight = Math.floor(height * fitScale);
+      }
+
+      canvas.style.setProperty("width", `${Math.max(1, cssWidth)}px`, "important");
+      canvas.style.setProperty("height", `${Math.max(1, cssHeight)}px`, "important");
+    }
+
+    window.addEventListener("resize", resizeCanvasCss);
+    canvas.addEventListener("pointerdown", resumeAudio);
+    window.addEventListener("keydown", resumeAudio);
+    canvas.addEventListener("webglcontextlost", function (event) {
+      event.preventDefault();
+      console.error("WebGL context lost. Reload the page to continue.");
+    }, false);
+
+    new MutationObserver(resizeCanvasCss).observe(canvas, {
+      attributes: true,
+      attributeFilter: ["width", "height"],
+    });
+    resizeCanvasCss();
+
+    var Module = {
+      preRun: [],
+      postRun: [resizeCanvasCss],
+      print(text) {
+        if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(" ");
+        console.log(text);
+      },
+      printErr(text) {
+        if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(" ");
+        console.error(text);
+      },
+      canvas,
+      setStatus(text) {
+        if (text) console.log(text);
+      },
+      totalDependencies: 0,
+      monitorRunDependencies(left) {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        if (left) {
+          Module.setStatus(`Preparing... (${this.totalDependencies - left}/${this.totalDependencies})`);
+        }
+      },
+    };
+
+    window.onerror = function (message, source, line, column, error) {
+      console.error(message, source, line, column, error && error.stack);
+    };
+  </script>
+  {{{ SCRIPT }}}
+</body>
+
+</html>

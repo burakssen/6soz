@@ -1,4 +1,4 @@
-const rl = @import("raylib.zig").rl;
+const rl = @import("raylib").rl;
 const std = @import("std");
 
 const Video = @This();
