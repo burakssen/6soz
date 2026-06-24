@@ -48,7 +48,9 @@ pub fn deinit(self: *App) void {
 
 pub fn run(self: *App, rom_path: []const u8, boot_rom_path: ?[]const u8, model: Model) !void {
     var save_path: ?[]u8 = null;
+    var state_path: ?[]u8 = null;
     defer if (save_path) |path| self.allocator.free(path);
+    defer if (state_path) |path| self.allocator.free(path);
     defer if (save_path) |path| {
         self.writeSaveRam(path) catch |err| {
             std.debug.print("Warning: failed to write save RAM to {s}: {s}\n", .{ path, @errorName(err) });
@@ -72,12 +74,26 @@ pub fn run(self: *App, rom_path: []const u8, boot_rom_path: ?[]const u8, model: 
         }
 
         save_path = try std.fmt.allocPrint(self.allocator, "{s}.sav", .{rom_path});
+        state_path = try std.fmt.allocPrint(self.allocator, "{s}.state", .{rom_path});
         try self.loadSaveRam(save_path.?);
     }
     rl.SetTargetFPS(self.emulator.metadata().frame_rate);
     try self.emulator.reset();
 
     while (!rl.WindowShouldClose()) {
+        if (state_path) |path| {
+            if (rl.IsKeyPressed(rl.KEY_F5)) {
+                self.writeState(path) catch |err| {
+                    std.debug.print("Warning: failed to write state to {s}: {s}\n", .{ path, @errorName(err) });
+                };
+            }
+            if (rl.IsKeyPressed(rl.KEY_F8)) {
+                self.loadState(path) catch |err| {
+                    std.debug.print("Warning: failed to load state from {s}: {s}\n", .{ path, @errorName(err) });
+                };
+            }
+        }
+
         self.emulator.setInput(Input.read());
 
         const result = try self.emulator.stepFrame();
@@ -109,6 +125,27 @@ fn writeSaveRam(self: *App, save_path: []const u8) !void {
         .sub_path = save_path,
         .data = save_data,
     });
+}
+
+fn writeState(self: *App, state_path: []const u8) !void {
+    const state_data = try self.emulator.saveState(self.allocator);
+    defer self.allocator.free(state_data);
+    try std.Io.Dir.cwd().writeFile(self.io, .{
+        .sub_path = state_path,
+        .data = state_data,
+    });
+}
+
+fn loadState(self: *App, state_path: []const u8) !void {
+    const state_data = std.Io.Dir.cwd().readFileAlloc(self.io, state_path, self.allocator, .limited(64 * 1024 * 1024)) catch |err| switch (err) {
+        error.FileNotFound => return error.StateNotFound,
+        else => |e| return e,
+    };
+    defer self.allocator.free(state_data);
+
+    try self.emulator.loadState(state_data);
+    self.audio.resetSilence();
+    try self.update(self.emulator.framebuffer());
 }
 
 fn update(self: *App, frame: []const u32) !void {

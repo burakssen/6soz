@@ -73,6 +73,30 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the 6soz executable");
     run_step.dependOn(&run_cmd.step);
 
+    const bench_mod = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("src/bench.zig"),
+        .imports = &.{
+            .{ .name = "emulator", .module = emulator_mod },
+        },
+    });
+
+    const bench_exe = b.addExecutable(.{
+        .name = "bench",
+        .root_module = bench_mod,
+    });
+
+    b.installArtifact(bench_exe);
+
+    const bench_run = b.addRunArtifact(bench_exe);
+    bench_run.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        bench_run.addArgs(args);
+    }
+    const bench_step = b.step("bench", "Run the benchmark executable");
+    bench_step.dependOn(&bench_run.step);
+
     const emulator_tests = b.addTest(.{
         .root_module = emulator_mod,
     });

@@ -48,6 +48,26 @@ zig build run -Doptimize=ReleaseFast -- gb roms/game.gb --boot-rom boot/dmg.bin
 zig build run -Doptimize=ReleaseFast -- gb roms/game.gbc --boot-rom boot/cgb.bin --model cgb
 ```
 
+The host stores battery-backed save data next to the ROM as `<rom_path>.sav`.
+Save states are stored next to the ROM as `<rom_path>.state`; press `F5` to
+write a state and `F8` to load it. Game Boy and Game Boy Color games require a
+matching legally obtained boot ROM before they can start or load states.
+
+## Benchmark
+
+Run the headless benchmark executable with:
+
+```sh
+zig build bench -Doptimize=ReleaseFast -- <system> <rom_path> [frames_count] [--boot-rom <path>]
+```
+
+For example:
+
+```sh
+zig build bench -Doptimize=ReleaseFast -- nes roms/mario.nes 1000
+zig build bench -Doptimize=ReleaseFast -- gb roms/game.gb 1000 --boot-rom boot/dmg.bin
+```
+
 ## License
 
 This project is licensed under the [MIT Licence](LICENCE).
