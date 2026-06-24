@@ -68,6 +68,15 @@ zig build bench -Doptimize=ReleaseFast -- nes roms/mario.nes 1000
 zig build bench -Doptimize=ReleaseFast -- gb roms/game.gb 1000 --boot-rom boot/dmg.bin
 ```
 
+## Compatibility Smoke Checks
+
+Run headless load/step/save-state checks over one NES ROM or a directory of
+NES ROMs:
+
+```sh
+zig build smoke -- nes roms/nes --frames 2
+```
+
 ## License
 
 This project is licensed under the [MIT Licence](LICENCE).

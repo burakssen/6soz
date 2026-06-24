@@ -97,6 +97,30 @@ pub fn build(b: *std.Build) void {
     const bench_step = b.step("bench", "Run the benchmark executable");
     bench_step.dependOn(&bench_run.step);
 
+    const smoke_mod = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("src/smoke.zig"),
+        .imports = &.{
+            .{ .name = "emulator", .module = emulator_mod },
+        },
+    });
+
+    const smoke_exe = b.addExecutable(.{
+        .name = "smoke",
+        .root_module = smoke_mod,
+    });
+
+    b.installArtifact(smoke_exe);
+
+    const smoke_run = b.addRunArtifact(smoke_exe);
+    smoke_run.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        smoke_run.addArgs(args);
+    }
+    const smoke_step = b.step("smoke", "Run headless compatibility smoke checks");
+    smoke_step.dependOn(&smoke_run.step);
+
     const emulator_tests = b.addTest(.{
         .root_module = emulator_mod,
     });

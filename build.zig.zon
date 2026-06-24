@@ -11,8 +11,8 @@
             .hash = "_6soz_nes-0.0.1-2l771KVDAgAKhhsuYYxp-FA6up5TDgT0ha3Qwpj40WIB",
         },
         .gameboy = .{
-            .url = "git+https://github.com/burakssen/6soz-gameboy#947e0698b75ea6629df7e0cbea8f9737d28fe448",
-            .hash = "_6soz_gameboy-0.0.1-TC08mk1MAQDJA4lz9dpJ_xAiz0f4Er1V2xFp2TC_T5xB",
+            .url = "git+https://github.com/burakssen/6soz-gameboy#07fc6a2fb7882e63b4653d78090aed825f9227ba",
+            .hash = "_6soz_gameboy-0.0.1-TC08mrSHAQCT8SDZvIDTKjmWvx1ga6keQgkogdspbm-v",
         },
     },
     .minimum_zig_version = "0.16.0",
