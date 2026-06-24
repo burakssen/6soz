@@ -56,7 +56,7 @@ jobs:
 
       - name: Build WASM
         run: |
-          zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseFast
+          zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
