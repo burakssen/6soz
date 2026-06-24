@@ -9,8 +9,6 @@ const ui = @import("menu_ui");
 extern fn emscripten_set_main_loop(*const fn () callconv(.c) void, c_int, c_int) void;
 extern fn emscripten_cancel_main_loop() void;
 
-pub const panic = std.debug.FullPanic(std.debug.defaultPanic);
-
 const allocator = std.heap.c_allocator;
 
 const Screen = enum {
@@ -30,10 +28,7 @@ export fn main(argc: c_int, argv: [*]?[*:0]u8) c_int {
     _ = argc;
     _ = argv;
 
-    start() catch |err| {
-        std.log.err("failed to start web emulator: {s}", .{@errorName(err)});
-        return 1;
-    };
+    start() catch return 1;
     return 0;
 }
 
@@ -47,8 +42,9 @@ fn start() !void {
 
 fn updateFrame() callconv(.c) void {
     updateFrameInner() catch |err| {
-        std.log.err("web emulator frame failed: {s}", .{@errorName(err)});
-        emscripten_cancel_main_loop();
+        error_message = @errorName(err);
+        returnToMenuPreservingError();
+        renderRoms(ui.systems[system_index], playableCount(ui.systems[system_index]));
     };
 }
 
@@ -118,10 +114,9 @@ fn startGame(entry: manifest.RomEntry) !void {
         app = null;
     }
 
-    var selected_emulator = emulator.Emulator.init(entry.kind, allocator);
-    errdefer selected_emulator.deinit();
+    const selected_emulator = emulator.Emulator.init(entry.kind, allocator);
 
-    app = try App.initInOpenWindow(undefined, allocator, selected_emulator, .{});
+    app = try App.initInOpenWindow(allocator, selected_emulator);
     errdefer {
         if (app) |*running| running.deinit();
         app = null;
@@ -158,6 +153,15 @@ fn returnToMenu() void {
     rl.SetWindowSize(ui.width, ui.height);
     screen = .roms;
     error_message = null;
+}
+
+fn returnToMenuPreservingError() void {
+    if (app) |*running| {
+        running.deinit();
+        app = null;
+    }
+    rl.SetWindowSize(ui.width, ui.height);
+    screen = .roms;
 }
 
 fn renderRoms(kind: emulator.EmulatorKind, count: usize) void {

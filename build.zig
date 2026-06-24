@@ -124,13 +124,48 @@ pub fn build(b: *std.Build) void {
                 .{ .name = "emulator", .module = emulator_mod },
             },
         });
+        const web_video_mod = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+            .root_source_file = b.path("src/frontend/raylib/video.zig"),
+            .imports = &.{
+                .{ .name = "raylib", .module = raylib_mod },
+            },
+        });
+        web_video_mod.linkLibrary(raylib_dep.artifact("raylib"));
+        web_video_mod.addIncludePath(raylib_dep.path("src"));
+
+        const web_audio_mod = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+            .root_source_file = b.path("src/frontend/raylib/audio.zig"),
+            .imports = &.{
+                .{ .name = "raylib", .module = raylib_mod },
+            },
+        });
+        web_audio_mod.linkLibrary(raylib_dep.artifact("raylib"));
+        web_audio_mod.addIncludePath(raylib_dep.path("src"));
+
+        const web_app_mod = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+            .root_source_file = b.path("src/web/app.zig"),
+            .imports = &.{
+                .{ .name = "audio", .module = web_audio_mod },
+                .{ .name = "emulator", .module = emulator_mod },
+                .{ .name = "raylib", .module = raylib_mod },
+                .{ .name = "video", .module = web_video_mod },
+            },
+        });
+        web_app_mod.linkLibrary(raylib_dep.artifact("raylib"));
+        web_app_mod.addIncludePath(raylib_dep.path("src"));
 
         const web_root_mod = b.createModule(.{
             .target = target,
             .optimize = optimize,
             .root_source_file = b.path("src/web/main.zig"),
             .imports = &.{
-                .{ .name = "app", .module = app_mod },
+                .{ .name = "app", .module = web_app_mod },
                 .{ .name = "emulator", .module = emulator_mod },
                 .{ .name = "raylib", .module = raylib_mod },
                 .{ .name = "menu_ui", .module = menu_ui_mod },
