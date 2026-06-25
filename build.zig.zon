@@ -15,8 +15,8 @@
             .hash = "zemscripten-0.2.0-dev-sRlDqApRAACspTbAZnuNKWIzfWzSYgYkb2nWAXZ-tqqt",
         },
         .nes = .{
-            .url = "git+https://github.com/burakssen/6soz-nes#a66b84580b55b658d0ca4026ece515f9b1770e71",
-            .hash = "_6soz_nes-0.0.1-2l771KVDAgAKhhsuYYxp-FA6up5TDgT0ha3Qwpj40WIB",
+            .url = "git+https://github.com/burakssen/6soz-nes#97223280b93745071c4dc1f3380c46067ad4e0a5",
+            .hash = "_6soz_nes-0.0.1-2l771B1sAgDAK2wYQUcIHhrsQ5X43OVw_IfMuP84bvg0",
         },
         .gameboy = .{
             .url = "git+https://github.com/burakssen/6soz-gameboy#0737d4fcd3a37116afd04829c152bbf7a49e5595",
