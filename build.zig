@@ -2,6 +2,10 @@ const std = @import("std");
 const raylib = @import("raylib");
 const web_roms = @import("build/web_roms.zig");
 
+fn linuxDisplayBackend(b: *std.Build) raylib.LinuxDisplayBackend {
+    return if (b.graph.environ_map.get("WAYLAND_DISPLAY") != null) .Wayland else .X11;
+}
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -19,7 +23,7 @@ pub fn build(b: *std.Build) void {
         b.dependency("raylib", .{
             .target = target,
             .optimize = optimize,
-            .linux_display_backend = .Wayland,
+            .linux_display_backend = linuxDisplayBackend(b),
         });
 
     const nes_dep = b.dependency("nes", .{
