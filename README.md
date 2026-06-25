@@ -117,11 +117,24 @@ zig build bench -Doptimize=ReleaseFast -- gb roms/game.gb 1000 --boot-rom boot/d
 
 ## Compatibility Smoke Checks
 
-Run headless load/step/save-state checks over one NES ROM or a directory of
-NES ROMs:
+Run headless load/step/save-state checks over one ROM or a directory of ROMs.
+Unsupported mappers, unsupported timing modes, and unsupported cartridges are
+reported as skips; read, reset, frame-step, save-state, and load-state errors
+fail the run.
 
 ```sh
 zig build smoke -- nes roms/nes --frames 2
+zig build smoke -- gb roms/gb --frames 2 --boot-rom roms/gb/boot.rom.gb --model dmg
+```
+
+For release validation from a clean checkout, run:
+
+```sh
+zig build test
+zig build
+zig build -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall
+zig build smoke -- nes roms/nes/ravens_gate_mmc1.nes --frames 2
+zig build smoke -- gb roms/gb/porklike.gb --frames 2 --boot-rom roms/gb/boot.rom.gb --model dmg
 ```
 
 ## License

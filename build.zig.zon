@@ -19,11 +19,11 @@
             .hash = "_6soz_nes-0.0.1-2l771KVDAgAKhhsuYYxp-FA6up5TDgT0ha3Qwpj40WIB",
         },
         .gameboy = .{
-            .url = "git+https://github.com/burakssen/6soz-gameboy#07fc6a2fb7882e63b4653d78090aed825f9227ba",
-            .hash = "_6soz_gameboy-0.0.1-TC08mrSHAQCT8SDZvIDTKjmWvx1ga6keQgkogdspbm-v",
+            .url = "git+https://github.com/burakssen/6soz-gameboy#0737d4fcd3a37116afd04829c152bbf7a49e5595",
+            .hash = "_6soz_gameboy-0.0.1-TC08mj6lAQCyZgFEIMEwxVxaKgY-zc_Fwq6zsK6q8fpA",
         },
     },
     .minimum_zig_version = "0.16.0",
-    .paths = .{ "build.zig", "build.zig.zon", "src", "config.zon", "roms/nes/ravens_gate_mmc1.nes", "README.md", "LICENCE" },
+    .paths = .{ "build.zig", "build.zig.zon", "src", "config.zon", "roms/nes/ravens_gate_mmc1.nes", "roms/gb/porklike.gb", "roms/gb/boot.rom.gb", "README.md", "LICENCE" },
     .fingerprint = 0xad233139f291f54a,
 }

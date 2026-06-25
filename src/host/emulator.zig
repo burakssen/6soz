@@ -5,6 +5,8 @@ const Nes = @import("nes");
 const GameBoy = @import("gameboy");
 const State = common.StateCodec;
 
+pub const nes_max_rom_size = 64 * 1024 * 1024;
+
 pub const InputState = common.InputState;
 pub const StepResult = common.StepResult;
 pub const Metadata = common.Metadata;
@@ -211,7 +213,7 @@ pub const Emulator = union(EmulatorKind) {
                 .scale = 3,
                 .frame_rate = nes.frameRate(),
                 .audio_sample_rate = nes.audioSampleRate(),
-                .max_rom_size = 1024 * 1024,
+                .max_rom_size = nes_max_rom_size,
             },
             .gameboy => .{
                 .width = GameBoy.width,
@@ -236,6 +238,16 @@ test "model parses supported names" {
     try std.testing.expectEqual(Model.dmg, Model.from("dmg").?);
     try std.testing.expectEqual(Model.cgb, Model.from("cgb").?);
     try std.testing.expectEqual(@as(?Model, null), Model.from("invalid"));
+}
+
+test "metadata exposes host ROM size caps" {
+    var nes = Emulator.init(.nes, std.testing.allocator);
+    defer nes.deinit();
+    try std.testing.expectEqual(@as(usize, nes_max_rom_size), nes.metadata().max_rom_size);
+
+    var gameboy = Emulator.init(.gameboy, std.testing.allocator);
+    defer gameboy.deinit();
+    try std.testing.expectEqual(@as(usize, GameBoy.max_rom_size), gameboy.metadata().max_rom_size);
 }
 
 test "NES state round trips through emulator facade" {

@@ -308,6 +308,7 @@ pub fn build(b: *std.Build) void {
         config_mod,
         roms_mod,
         app_mod,
+        smoke_mod,
     }) |mod| {
         const tests = b.addTest(.{
             .root_module = mod,
