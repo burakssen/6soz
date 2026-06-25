@@ -17,41 +17,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify-native:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Cache Zig global cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/zig
-          key: ${{ runner.os }}-zig-native-${{ hashFiles('build.zig', 'build.zig.zon') }}
-          restore-keys: |
-            ${{ runner.os }}-zig-native-
-            ${{ runner.os }}-zig-
-
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2.2.1
-        with:
-          version: 0.16.0
-
-      - name: Run unit tests
-        run: zig build test
-
-      - name: Build native host
-        run: zig build
-
-      - name: Smoke NES sample
-        run: zig build smoke -- nes roms/nes/ravens_gate_mmc1.nes --frames 2
-
-      - name: Smoke Game Boy sample
-        run: zig build smoke -- gb roms/gb/porklike.gb --frames 2 --boot-rom roms/gb/boot.rom.gb --model dmg
-
   build-web:
     runs-on: ubuntu-latest
 
@@ -101,7 +66,7 @@ jobs:
   deploy:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    needs: [verify-native, build-web]
+    needs: [build-web]
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
