@@ -208,7 +208,7 @@ pub const Emulator = union(EmulatorKind) {
     pub fn metadata(self: *const Self) Metadata {
         return switch (self.*) {
             .nes => |*nes| .{
-                .width = Nes.Ppu.Video.width,
+                .width = Nes.Ppu.Video.width - 16,
                 .height = Nes.Ppu.Video.height,
                 .scale = 3,
                 .frame_rate = nes.frameRate(),

@@ -303,6 +303,27 @@ pub fn build(b: *std.Build) void {
     const smoke_step = b.step("smoke", "Run headless compatibility smoke checks");
     smoke_step.dependOn(&smoke_cmd.step);
 
+    const capture_mod = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("src/cli/capture.zig"),
+        .imports = &.{
+            .{ .name = "emulator", .module = emulator_mod },
+        },
+    });
+
+    const capture = b.addExecutable(.{
+        .name = "capture",
+        .root_module = capture_mod,
+    });
+
+    const capture_cmd = b.addRunArtifact(capture);
+    capture_cmd.step.dependOn(b.getInstallStep());
+    if (b.args) |args| capture_cmd.addArgs(args);
+
+    const capture_step = b.step("capture", "Capture a headless framebuffer screenshot");
+    capture_step.dependOn(&capture_cmd.step);
+
     const test_step = b.step("test", "Run unit tests");
 
     inline for (&.{
@@ -313,6 +334,7 @@ pub fn build(b: *std.Build) void {
         roms_mod,
         app_mod,
         smoke_mod,
+        capture_mod,
     }) |mod| {
         const tests = b.addTest(.{
             .root_module = mod,
