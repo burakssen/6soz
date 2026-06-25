@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>6soz</title>
+
   <style>
     html,
     body {
@@ -17,8 +18,13 @@
     }
 
     body {
-      display: grid;
-      place-items: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 14px;
+      box-sizing: border-box;
     }
 
     #canvas {
@@ -30,6 +36,24 @@
       image-rendering: pixelated;
       image-rendering: crisp-edges;
       outline: none;
+      flex: 0 1 auto;
+    }
+
+    #rom-credits {
+      z-index: 10;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.72);
+      color: #e8e8e8;
+      font: 12px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: min(560px, 100%);
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    #rom-credits a {
+      color: #9ecbff;
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -37,8 +61,20 @@
 <body>
   <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
 
+  <aside id="rom-credits">
+    Sample ROM credits:
+    <a href="https://mercurybd.itch.io/ravens-gate-nes" target="_blank" rel="noopener noreferrer">
+      Ravens Gate (NES) by MercuryBD
+    </a>
+    ·
+    <a href="https://binji.itch.io/porklikegb" target="_blank" rel="noopener noreferrer">
+      Porklike GB by Binji
+    </a>
+  </aside>
+
   <script>
     const canvas = document.querySelector("#canvas");
+    const credits = document.querySelector("#rom-credits");
     const audioContexts = [];
 
     function installAudioContextProxy(name) {
@@ -69,8 +105,24 @@
       const width = canvas.width || 1;
       const height = canvas.height || 1;
 
-      const maxWidth = window.innerWidth;
-      const maxHeight = window.innerHeight;
+      const bodyStyle = getComputedStyle(document.body);
+
+      const paddingX =
+        parseFloat(bodyStyle.paddingLeft) +
+        parseFloat(bodyStyle.paddingRight);
+
+      const paddingY =
+        parseFloat(bodyStyle.paddingTop) +
+        parseFloat(bodyStyle.paddingBottom);
+
+      const gap = parseFloat(bodyStyle.gap) || 0;
+      const creditsHeight = credits ? credits.getBoundingClientRect().height : 0;
+
+      const maxWidth = Math.max(1, window.innerWidth - paddingX);
+      const maxHeight = Math.max(
+        1,
+        window.innerHeight - paddingY - gap - creditsHeight
+      );
 
       const scale = Math.min(maxWidth / width, maxHeight / height);
 
@@ -94,6 +146,10 @@
       attributes: true,
       attributeFilter: ["width", "height"],
     });
+
+    if ("ResizeObserver" in window && credits) {
+      new ResizeObserver(resizeCanvasCss).observe(credits);
+    }
 
     resizeCanvasCss();
 
