@@ -50,6 +50,10 @@ playable ROMs from `roms/nes` and `roms/gb` plus the Game Boy boot ROM, while
 excluding `.sav` and `.state` files. Press `Escape` during gameplay to return
 to the ROM menu.
 
+**Sample ROM Credits:**
+- `ravens_gate_mmc1.nes` - Ravens Gate (NES) by MercuryBD: https://mercurybd.itch.io/ravens-gate-nes
+- `porklike.gb` - Porklike GB by Binji: https://binji.itch.io/porklikegb
+
 ## Run
 
 ```sh
