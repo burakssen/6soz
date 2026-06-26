@@ -2,7 +2,7 @@
     .roms_path = "roms",
     .default_system = .nes,
     .gameboy_model = .auto,
-    .boot_roms = .{ .dmg = "roms/gb/boot.rom.gb", .cgb = null },
+    .boot_roms = .{ .dmg = "roms/gb/boot.rom.gb", .cgb = "roms/gb/boot.rom.gbc" },
     .video = .{ .scale = null },
     .audio = .{ .enabled = true },
     .saves = .{ .save_dir = null, .state_dir = null },
