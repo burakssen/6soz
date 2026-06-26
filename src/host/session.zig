@@ -125,7 +125,7 @@ pub fn stepFrame(self: *Session) !EmulatorHost.StepResult {
     return self.emulator.stepFrame();
 }
 
-pub fn framebuffer(self: *const Session) []const u32 {
+pub fn framebuffer(self: *Session) []const u32 {
     return self.emulator.framebuffer();
 }
 

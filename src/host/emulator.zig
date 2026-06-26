@@ -198,7 +198,7 @@ pub const Emulator = union(EmulatorKind) {
         }
     }
 
-    pub fn framebuffer(self: *const Self) []const u32 {
+    pub fn framebuffer(self: *Self) []const u32 {
         return switch (self.*) {
             .nes => |*nes| nes.framebuffer(),
             .gameboy => |*gameboy| gameboy.framebuffer(),
