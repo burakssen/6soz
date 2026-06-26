@@ -16,5 +16,5 @@
         .left = "Left",
         .right = "Right",
     },
-    .last = .{ .system = .nes, .rom_path = "roms/nes/ravens_gate_mmc1.nes" },
+    .last = .{ .system = .gameboy, .rom_path = "roms/gb/LabyrinthOfTheDragon.gbc" },
 }

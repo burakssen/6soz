@@ -127,12 +127,55 @@ pub fn withLastRom(allocator: std.mem.Allocator, cfg: *Config, kind: emulator.Em
     cfg.last.system = kind;
 }
 
-pub fn bootRomPath(cfg: Config, kind: emulator.EmulatorKind, model: emulator.Model) ?[]const u8 {
-    if (kind != .gameboy) return null;
+fn bootRomPathForResolvedModel(cfg: Config, model: emulator.Model) ?[]const u8 {
     return switch (model) {
         .cgb => cfg.boot_roms.cgb orelse cfg.boot_roms.dmg,
-        .auto, .dmg => cfg.boot_roms.dmg,
+        .dmg, .auto => cfg.boot_roms.dmg,
     };
+}
+
+pub fn bootRomPath(cfg: Config, kind: emulator.EmulatorKind, model: emulator.Model) ?[]const u8 {
+    if (kind != .gameboy) return null;
+    return bootRomPathForResolvedModel(cfg, model);
+}
+
+fn needsCgbBootRom(cgb_flag: u8) bool {
+    return switch (cgb_flag) {
+        0x80, 0xc0 => true,
+        else => false,
+    };
+}
+
+fn hasGbcExtension(path: []const u8) bool {
+    return std.ascii.eqlIgnoreCase(std.fs.path.extension(path), ".gbc");
+}
+
+pub fn resolveGameBoyModel(model: emulator.Model, rom_data: []const u8, rom_path: []const u8) emulator.Model {
+    if (model != .auto) return model;
+    if (rom_data.len >= 0x144 and needsCgbBootRom(rom_data[0x143])) return .cgb;
+    if (hasGbcExtension(rom_path)) return .cgb;
+    return .dmg;
+}
+
+pub fn bootRomPathForRom(
+    io: std.Io,
+    cfg: Config,
+    kind: emulator.EmulatorKind,
+    model: emulator.Model,
+    rom_path: []const u8,
+) !?[]const u8 {
+    if (kind != .gameboy) return null;
+    const resolved = if (model != .auto)
+        model
+    else blk: {
+        var header: [0x144]u8 = undefined;
+        const read = std.Io.Dir.cwd().readFile(io, rom_path, &header) catch |err| switch (err) {
+            error.FileNotFound => break :blk resolveGameBoyModel(.auto, &.{}, rom_path),
+            else => |e| return e,
+        };
+        break :blk resolveGameBoyModel(.auto, read, rom_path);
+    };
+    return bootRomPathForResolvedModel(cfg, resolved);
 }
 
 pub fn parseSource(allocator: std.mem.Allocator, source: [:0]const u8) !Config {
@@ -180,4 +223,50 @@ test "config rejects unknown fields" {
     ;
 
     try std.testing.expectError(error.InvalidConfig, parseSource(std.testing.allocator, source));
+}
+
+test "resolveGameBoyModel uses cartridge header for auto" {
+    var rom: [0x144]u8 = [_]u8{0} ** 0x144;
+    rom[0x143] = 0x80;
+    try std.testing.expectEqual(emulator.Model.cgb, resolveGameBoyModel(.auto, &rom, "game.gb"));
+    rom[0x143] = 0xc0;
+    try std.testing.expectEqual(emulator.Model.cgb, resolveGameBoyModel(.auto, &rom, "game.gb"));
+    rom[0x143] = 0x00;
+    try std.testing.expectEqual(emulator.Model.dmg, resolveGameBoyModel(.auto, &rom, "game.gb"));
+}
+
+test "resolveGameBoyModel uses gbc extension when header is unavailable" {
+    try std.testing.expectEqual(emulator.Model.cgb, resolveGameBoyModel(.auto, &.{}, "game.gbc"));
+    try std.testing.expectEqual(emulator.Model.dmg, resolveGameBoyModel(.auto, &.{}, "game.gb"));
+}
+
+test "resolveGameBoyModel preserves explicit model" {
+    var rom: [0x144]u8 = [_]u8{0} ** 0x144;
+    rom[0x143] = 0xc0;
+    try std.testing.expectEqual(emulator.Model.dmg, resolveGameBoyModel(.dmg, &rom, "game.gbc"));
+    try std.testing.expectEqual(emulator.Model.cgb, resolveGameBoyModel(.cgb, &rom, "game.gb"));
+}
+
+test "bootRomPath selects boot ROM by resolved model" {
+    const cfg: Config = .{
+        .boot_roms = .{
+            .dmg = "boot/dmg.bin",
+            .cgb = "boot/cgb.bin",
+        },
+    };
+
+    try std.testing.expectEqualStrings("boot/cgb.bin", bootRomPath(cfg, .gameboy, .cgb).?);
+    try std.testing.expectEqualStrings("boot/dmg.bin", bootRomPath(cfg, .gameboy, .dmg).?);
+    try std.testing.expectEqualStrings("boot/dmg.bin", bootRomPath(cfg, .gameboy, .auto).?);
+}
+
+test "bootRomPath falls back to dmg when cgb path is missing" {
+    const cfg: Config = .{
+        .boot_roms = .{
+            .dmg = "boot/dmg.bin",
+            .cgb = null,
+        },
+    };
+
+    try std.testing.expectEqualStrings("boot/dmg.bin", bootRomPath(cfg, .gameboy, .cgb).?);
 }

@@ -70,7 +70,7 @@ pub fn main(init: std.process.Init) !void {
             std.process.exit(2);
         };
         const model = if (parsed.model_set) parsed.model else if (kind == .gameboy) cfg.gameboy_model else .auto;
-        const boot_rom_path = parsed.boot_rom_path orelse config.bootRomPath(cfg, kind, model);
+        const boot_rom_path = parsed.boot_rom_path orelse try config.bootRomPathForRom(io, cfg, kind, model, rom_path);
         try launch(io, allocator, cfg, kind, rom_path, boot_rom_path, model);
         return;
     }

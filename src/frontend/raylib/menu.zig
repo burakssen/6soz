@@ -58,7 +58,7 @@ pub fn run(io: std.Io, allocator: std.mem.Allocator, cfg: config.Config) !?Selec
                 if (rl.IsKeyPressed(rl.KEY_ENTER) and discovered.len != 0) {
                     const kind = ui.systems[system_index];
                     const model = if (kind == .gameboy) cfg.gameboy_model else .auto;
-                    const boot_rom_path = config.bootRomPath(cfg, kind, model);
+                    const boot_rom_path = try config.bootRomPathForRom(io, cfg, kind, model, discovered[rom_index].path);
                     if (kind == .gameboy and boot_rom_path == null) {
                         error_message = "Game Boy boot ROM path is missing in config.zon";
                     } else return .{
