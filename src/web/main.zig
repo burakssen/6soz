@@ -5,6 +5,7 @@ const emulator = @import("emulator");
 const manifest = @import("web_rom_manifest");
 const rl = @import("raylib").rl;
 const ui = @import("menu_ui");
+const config = @import("config");
 
 extern fn emscripten_set_main_loop(*const fn () callconv(.c) void, c_int, c_int) void;
 extern fn emscripten_cancel_main_loop() void;
@@ -126,20 +127,27 @@ fn startGame(entry: manifest.RomEntry) !void {
     const rom_ptr = rl.LoadFileData(entry.path.ptr, &rom_size);
     if (rom_ptr == null or rom_size <= 0) return error.RomLoadFailed;
     defer rl.UnloadFileData(rom_ptr);
+    const rom_data = rom_ptr[0..@as(usize, @intCast(rom_size))];
 
     var boot_size: c_int = 0;
     var boot_ptr: ?[*]u8 = null;
     defer if (boot_ptr) |ptr| rl.UnloadFileData(ptr);
 
+    // ponytail: resolve model early to determine correct boot rom path
+    var model: emulator.Model = .auto;
     if (entry.kind == .gameboy) {
-        const boot_path = manifest.dmg_boot_rom_path orelse return error.BootRomRequired;
+        model = config.resolveGameBoyModel(.auto, rom_data, entry.path);
+        const boot_path = switch (model) {
+            .cgb => manifest.cgb_boot_rom_path orelse manifest.dmg_boot_rom_path,
+            .dmg, .auto => manifest.dmg_boot_rom_path,
+        } orelse return error.BootRomRequired;
+
         boot_ptr = rl.LoadFileData(boot_path.ptr, &boot_size);
         if (boot_ptr == null or boot_size <= 0) return error.BootRomLoadFailed;
     }
 
-    const rom_data = rom_ptr[0..@as(usize, @intCast(rom_size))];
     const boot_data = if (boot_ptr) |ptr| ptr[0..@as(usize, @intCast(boot_size))] else null;
-    try app.?.loadRomWithBoot(rom_data, boot_data, .auto);
+    try app.?.loadRomWithBoot(rom_data, boot_data, model);
 
     screen = .game;
     error_message = null;

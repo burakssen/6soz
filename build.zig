@@ -174,6 +174,7 @@ pub fn build(b: *std.Build) void {
                 .{ .name = "raylib", .module = raylib_mod },
                 .{ .name = "menu_ui", .module = menu_ui_mod },
                 .{ .name = "web_rom_manifest", .module = web_manifest_mod },
+                .{ .name = "config", .module = config_mod },
             },
         });
         web_root_mod.linkLibrary(raylib_dep.artifact("raylib"));

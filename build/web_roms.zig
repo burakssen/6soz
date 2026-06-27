@@ -49,9 +49,14 @@ pub fn manifestSource(b: *std.Build, assets: []const Asset) []const u8 {
     ) catch @panic("OOM");
 
     var dmg_boot_rom_path: ?[]const u8 = null;
+    var cgb_boot_rom_path: ?[]const u8 = null;
     for (assets) |asset| {
-        if (asset.boot and asset.kind == .gameboy and dmg_boot_rom_path == null) {
-            dmg_boot_rom_path = asset.virtual_path;
+        if (asset.boot and asset.kind == .gameboy) {
+            if (std.mem.endsWith(u8, asset.virtual_path, "boot.rom.gb")) {
+                dmg_boot_rom_path = asset.virtual_path;
+            } else if (std.mem.endsWith(u8, asset.virtual_path, "boot.rom.gbc")) {
+                cgb_boot_rom_path = asset.virtual_path;
+            }
         }
         writer.print("    .{{ .kind = .{s}, .name = ", .{@tagName(asset.kind)}) catch @panic("OOM");
         writeZigString(writer, asset.name) catch @panic("OOM");
@@ -62,6 +67,12 @@ pub fn manifestSource(b: *std.Build, assets: []const Asset) []const u8 {
 
     writer.writeAll("};\n\npub const dmg_boot_rom_path: ?[:0]const u8 = ") catch @panic("OOM");
     if (dmg_boot_rom_path) |path| {
+        writeZigString(writer, path) catch @panic("OOM");
+    } else {
+        writer.writeAll("null") catch @panic("OOM");
+    }
+    writer.writeAll(";\n\npub const cgb_boot_rom_path: ?[:0]const u8 = ") catch @panic("OOM");
+    if (cgb_boot_rom_path) |path| {
         writeZigString(writer, path) catch @panic("OOM");
     } else {
         writer.writeAll("null") catch @panic("OOM");
@@ -87,7 +98,7 @@ fn collectInDir(b: *std.Build, assets: *std.ArrayList(Asset), dir_path: []const 
                     .name = b.dupe(entry.name),
                     .src_path = b.dupePath(child_path),
                     .virtual_path = std.fmt.allocPrint(b.allocator, "/{s}", .{child_path}) catch @panic("OOM"),
-                    .boot = std.mem.eql(u8, child_path, "roms/gb/boot.rom.gb"),
+                    .boot = std.mem.eql(u8, child_path, "roms/gb/boot.rom.gb") or std.mem.eql(u8, child_path, "roms/gb/boot.rom.gbc"),
                 }) catch @panic("OOM");
             },
             else => {},
